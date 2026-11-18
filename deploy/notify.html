@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#7B925E">
+  <title>Дневник малыша</title>
+  <style>
+    body {
+      font-family: system-ui;
+      max-width: 560px;
+      margin: 40px auto;
+      padding: 0 20px;
+      background: #F5EFE5;
+      color: #222
+    }
+
+    button {
+      background: #7B925E;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .05)
+    }
+
+    .ok {
+      color: #4E6335;
+      font-weight: 600
+    }
+
+    .no {
+      color: #D64545;
+      font-weight: 600
+    }
+  </style>
+</head>
+
+<body>
+  <h2>👶 Фоновые пуш-уведомления</h2>
+  <div class="card">
+    <div>Статус Service Worker: <span id="sw" class="no">регистрируется…</span></div>
+    <div style="margin-top:6px">Разрешение на пуши: <span id="perm" class="no">не запрошено</span></div>
+    <div style="margin-top:6px">Подписка на пуш: <span id="sub" class="no">—</span></div>
+    <p style="margin-top:14px"><button onclick="setup()">Разрешить и включить пуши</button></p>
+    <p style="font-size:13px;color:#7C7F78">После этого напоминания будут приходить на устройство, даже если дневник
+      закрыт.<br>
+      На Android: откройте сайт в Chrome → «Добавить на главный экран» → открывайте как приложение.<br>
+      На iPhone: пуш-пуши для PWA поддерживаются с iOS 16.4 (добавить на экран «Домой», затем разрешить пуши в
+      настройках сайта).</p>
+  </div>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').then(r => {
+        document.getElementById('sw').textContent = '✅ работает';
+        document.getElementById('sw').className = 'ok';
+      }).catch(e => {
+        document.getElementById('sw').textContent = '❌ ' + e.message;
+      });
+    } else document.getElementById('sw').textContent = '❌ не поддерживается';
+
+    function updPerm() {
+      const el = document.getElementById('perm');
+      if (!('Notification' in window)) { el.textContent = '❌ нет поддержки'; return; }
+      const p = Notification.permission;
+      el.textContent = p === 'granted' ? '✅ разрешено' : (p === 'denied' ? '🚫 заблокировано' : '⚠️ не запрошено');
+      el.className = p === 'granted' ? 'ok' : 'no';
+    }
+    updPerm();
+
+    async function setup() {
+      const perm = await Notification.requestPermission();
+      updPerm();
+      if (perm !== 'granted') return;
+      // Локальные пуши-проверка
+      if ('serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.ready;
+        reg.showNotification('👶 Пуши включены!', { body: 'Теперь напоминания будут приходить на устройство', icon: './icon.svg' });
+      }
+      // Попытка подписки на серверные пуши (нужен VAPID-ключ, если захотите пуши с сервера)
+      if ('PushManager' in window) {
+        try {
+          const reg = await navigator.serviceWorker.ready;
+          const sub = await reg.pushManager.getSubscription();
+          document.getElementById('sub').textContent = sub ? '✅ есть подписка' : 'ℹ️ локальные пуши включены (серверная подписка — по запросу)';
+        } catch (e) { }
+      }
+    }
+  </script>
+</body>
+
+</html>

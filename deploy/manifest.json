@@ -1,0 +1,14 @@
+{
+  "name": "Дневник малыша",
+  "short_name": "Дневник",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F5EFE5",
+  "theme_color": "#7B925E",
+  "lang": "ru",
+  "gcm_sender_id": "103953800507",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
